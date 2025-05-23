@@ -1,10 +1,11 @@
-{ config, pkgs, ... }:
+{ config, lib, pkgs, ... }:
 
 {
-  # Common configuration for all images
-  imports = [
-    "${pkgs.path}/nixos/modules/installer/cd-dvd/installation-cd-minimal.nix"
-  ];
+  # Don't import installation-cd-minimal.nix when using nixos-generators
+  # as it conflicts with the generator's own configurations
+
+  # Set state version
+  system.stateVersion = "24.11";
 
   # Kernel modules for HAM radio hardware
   boot.kernelModules = [ 
@@ -31,7 +32,6 @@
   ];
 
   # Audio system - essential for HAM radio
-  sound.enable = true;
   services.pipewire = {
     enable = true;
     alsa.enable = true;
@@ -39,8 +39,8 @@
     jack.enable = true;  # For low-latency digital modes
   };
   
-  # Fallback to PulseAudio if PipeWire issues
-  hardware.pulseaudio.enable = false;  # Conflicts with PipeWire
+  # Explicitly disable PulseAudio when PipeWire is enabled
+  services.pulseaudio.enable = false;
 
   # USB device permissions and rules
   services.udev.extraRules = ''
@@ -93,33 +93,26 @@
 
 
   # Default user for live system
-  users.users.hamradio = {
+  users.users.qrp = {
     isNormalUser = true;
     extraGroups = [ 
       "wheel" "audio" "dialout" "plugdev" "gpio" 
       "networkmanager" "video"  # video for some SDR apps
     ];
-    password = "hamradio";
+    password = "qrp";
   };
-
-  # Networking with both options
-  networking.networkmanager.enable = true;
-  networking.wireless.enable = false;  # Conflicts with NetworkManager
-  
-  # NetworkManager will handle USB WiFi dongles automatically
-  networking.networkmanager.wifi.backend = "wpa_supplicant";
 
   # Enable SSH for remote access
   services.openssh.enable = true;
   
   # Copy i3 config for better UX
-  environment.etc."skel/.config/i3/config".source = ../config/i3-config;
+  environment.etc."skel/.config/i3/config".text = builtins.readFile ../config/i3-config;
   
-  # Ensure config directory exists
+  # Ensure config directory exists and copy i3 config to user
   system.activationScripts.i3config = ''
-    mkdir -p /home/hamradio/.config/i3
-    cp /etc/skel/.config/i3/config /home/hamradio/.config/i3/config
-    chown -R hamradio:users /home/hamradio/.config
+    mkdir -p /home/qrp/.config/i3
+    cp /etc/skel/.config/i3/config /home/qrp/.config/i3/config
+    chown -R qrp:users /home/qrp/.config || true
   '';
 
   # Essential packages for hardware troubleshooting
@@ -135,7 +128,7 @@
     screen
     
     # Network tools
-    wireless-tools
+    wirelesstools
     wpa_supplicant
     wpa_supplicant_gui 
     networkmanagerapplet

@@ -2,7 +2,7 @@
 
 {
   imports = [ 
-    ./ham-radio-base.nix 
+    ./qrp-radio-base.nix 
     ./swl-edition.nix
     ./digimodes-edition.nix
     ./cw-edition.nix

@@ -3,8 +3,8 @@
 with lib;
 
 {
-  options.hamRadio = {
-    enable = mkEnableOption "HAM Radio base system";
+  options.qrpRadio = {
+    enable = mkEnableOption "QRP Radio base system";
     
     enableTX = mkOption {
       type = types.bool;
@@ -13,10 +13,9 @@ with lib;
     };
   };
 
-  config = mkIf config.hamRadio.enable {
-    # Audio system
-    sound.enable = true;
-    hardware.pulseaudio.enable = true;
+  config = mkIf config.qrpRadio.enable {
+    # Audio system - use defaults from base-image.nix
+    # sound.enable is deprecated, use hardware.alsa if needed
     
     # USB and serial support for radios
     services.udev.extraRules = ''

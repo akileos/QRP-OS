@@ -3,15 +3,15 @@
 with lib;
 
 {
-  imports = [ ./ham-radio-base.nix ];
+  imports = [ ./qrp-radio-base.nix ];
 
   config = {
-    hamRadio.enable = true;
+    qrpRadio.enable = true;
 
     environment.systemPackages = with pkgs; [
       # CW training and keying
       cw
-      xcwcp
+      # xcwcp might be part of unixcw package
       unixcw
       # Add logging software
       cqrlog

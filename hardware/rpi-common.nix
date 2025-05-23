@@ -1,17 +1,19 @@
 { config, lib, pkgs, ... }:
 
 {
-  # RPi specific configuration
+  # Common hostname for all Raspberry Pi devices
+  networking.hostName = lib.mkDefault "qrp-pi";
+  
+  # RPi specific configuration  
   boot.loader.grub.enable = false;
   boot.loader.generic-extlinux-compatible.enable = true;
   
-  boot.kernelPackages = pkgs.linuxPackages_rpi4;
+  boot.kernelPackages = lib.mkDefault pkgs.linuxPackages_rpi4;
   
-  # Hardware support
-  hardware.raspberry-pi."4".apply-overlays-dtmerge.enable = true;
+  # Basic device tree support (without hardware.raspberry-pi options for nixosConfigurations)
   hardware.deviceTree = {
-    enable = true;
-    filter = "*rpi-4-*.dtb";
+    enable = lib.mkDefault true;
+    filter = lib.mkDefault "*rpi-*.dtb";
   };
   
   # GPIO access

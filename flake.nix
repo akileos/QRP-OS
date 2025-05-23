@@ -1,5 +1,5 @@
 {
-  description = "Lightweight HAM Radio OS based on NixOS";
+  description = "Lightweight QRP Radio OS based on NixOS";
 
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
@@ -16,7 +16,7 @@
       allSystems = [ "x86_64-linux" "aarch64-linux" "x86_64-darwin" "aarch64-darwin" ];
       
       editions = [ "swl" "digimodes" "cw" "full" ];
-      architectures = [ "x86" "rpi3" "rpi4" "rpi5" ];
+      architectures = [ "x86" "rpi3" "rpi4" "rpi400" "rpizero2w" "rpi5" ];
       
       # Helper to generate all combinations
       combinations = nixpkgs.lib.flatten (map (edition:
@@ -29,9 +29,19 @@
       
       # Get system for architecture
       getSystem = arch: 
-        if builtins.elem arch [ "rpi3" "rpi4" "rpi5" ] 
+        if builtins.elem arch [ "rpi3" "rpi4" "rpi400" "rpizero2w" "rpi5" ] 
         then "aarch64-linux" 
         else "x86_64-linux";
+
+      # Get image format string for nixos-generators
+      getNixosGeneratorFormat = arch:
+        if arch == "x86" then "iso"
+        else if arch == "rpi3" then "sd-aarch64"
+        else if arch == "rpi4" then "sd-aarch64" 
+        else if arch == "rpi400" then "sd-aarch64"
+        else if arch == "rpizero2w" then "sd-aarch64"
+        else if arch == "rpi5" then "sd-aarch64"
+        else "raw"; # A generic fallback, though not used by current architectures
               
     in
     {
@@ -43,10 +53,6 @@
             ./modules/${edition}-edition.nix
             ./hardware/${arch}-minimal.nix
             ./images/base-image.nix
-            {
-              # Set ISO name dynamically
-              isoImage.isoName = "ham-radio-${edition}-${arch}.iso";
-            }
           ];
         };
       }) combinations);
@@ -56,27 +62,30 @@
           pkgs = nixpkgs.legacyPackages.${system};
         in
         if builtins.elem system linuxSystems then
-          # Linux: Build ISOs
+          # Linux: Build ISOs or IMGs
           (nixpkgs.lib.listToAttrs (
-            map ({ edition, arch }: {
-              name = "${edition}-${arch}-iso";
+            map ({ edition, arch }: 
+              let nixosGenFormat = getNixosGeneratorFormat arch; in
+              {
+              name = "${edition}-${arch}-${nixosGenFormat}"; # e.g., swl-x86-iso or digimodes-rpi4-sd-rpi4
               value = nixos-generators.nixosGenerate {
                 inherit system;
                 modules = [
                   ./modules/${edition}-edition.nix
                   ./hardware/${arch}-minimal.nix
                   ./images/base-image.nix
-                  {
-                    isoImage.isoName = "ham-radio-${edition}-${arch}.iso";
-                  }
-                ];
-                format = "iso";
+                ] ++ nixpkgs.lib.optional (arch == "x86") {
+                  isoImage.isoName = "qrp-os-${edition}-${arch}.iso";
+                } ++ nixpkgs.lib.optional (builtins.elem arch [ "rpi3" "rpi4" "rpi400" "rpizero2w" "rpi5" ]) {
+                  sdImage.imageName = "qrp-os-${edition}-${arch}.img";
+                };
+                format = nixosGenFormat; # Use the nixos-generators specific format string
               };
             }) (nixpkgs.lib.filter ({ edition, arch }: 
               getSystem arch == system
             ) combinations)
           )) // {
-            # Default package for Linux
+            # Default package for Linux (swl-x86-iso)
             default = nixos-generators.nixosGenerate {
               inherit system;
               modules = [
@@ -84,10 +93,10 @@
                 ./hardware/x86-minimal.nix
                 ./images/base-image.nix
                 {
-                  isoImage.isoName = "ham-radio-swl-x86.iso";
+                  isoImage.isoName = "qrp-os-swl-x86.iso";
                 }
               ];
-              format = "iso";
+              format = "iso"; # nixos-generators format for x86
             };
           }
         else
@@ -100,15 +109,17 @@
                 nixfmt
               ];
               shellHook = ''
-                echo "🎯 HAM Radio NixOS Development Environment"
+                echo "🎯 QRP Radio NixOS Development Environment"
                 echo "📡 Available editions: ${builtins.concatStringsSep ", " editions}"
                 echo "💻 Available architectures: ${builtins.concatStringsSep ", " architectures}"
                 echo ""
-                echo "🚀 To build ISOs (requires Linux):"
-                echo "   nix build .#swl-x86-iso"
-                echo "   nix build .#digimodes-rpi-iso"
+                echo "🚀 To build images (requires Linux or a Linux builder):"
+                echo "   nix build .#swl-x86-iso" 
+                echo "   nix build .#digimodes-rpi4-sd-aarch64"
+                echo "   nix build .#swl-rpizero2w-sd-aarch64  # Optimized for 512MB RAM"
+                echo "   nix build .#full-rpi400-sd-aarch64" 
                 echo ""
-                echo "🔧 To test configurations:"
+                echo "🔧 To test configurations (on Linux):"
                 echo "   nixos-rebuild build-vm --flake .#swl-x86"
               '';
             };
@@ -132,20 +143,25 @@
             ];
             
             shellHook = ''
-              echo "🎯 HAM Radio NixOS Development Environment"
+              echo "🎯 QRP Radio NixOS Development Environment"
               echo "📡 Available editions: ${builtins.concatStringsSep ", " editions}"
               echo "💻 Available architectures: ${builtins.concatStringsSep ", " architectures}"
               echo ""
               ${if isLinux then ''
                 echo "🚀 Build commands:"
-                echo "   nix build .#swl-x86-iso"
-                echo "   nix build .#digimodes-rpi-iso"
+                echo "   nix build .#swl-x86-iso" 
+                echo "   nix build .#digimodes-rpi4-sd-aarch64"
+                echo "   nix build .#swl-rpizero2w-sd-aarch64  # Optimized for 512MB RAM"
+                echo "   nix build .#full-rpi400-sd-aarch64" 
                 echo ""
                 echo "🔧 Test commands:"
                 echo "   nixos-rebuild build-vm --flake .#swl-x86"
               '' else ''
-                echo "🍎 Running on macOS - use remote Linux builder for ISO builds:"
-                echo "   nix build .#swl-x86-iso --builders 'ssh://user@linux-machine x86_64-linux'"
+                echo "🍎 Running on macOS - use remote Linux builder for image builds:"
+                echo "   nix build .#swl-x86-iso --builders 'ssh://user@linux-machine x86_64-linux'" 
+                echo "   nix build .#digimodes-rpi4-sd-aarch64 --builders 'ssh://user@linux-machine aarch64-linux'"
+                echo "   nix build .#swl-rpizero2w-sd-aarch64 --builders 'ssh://user@linux-machine aarch64-linux'"
+                echo "   nix build .#full-rpi400-sd-aarch64 --builders 'ssh://user@linux-machine aarch64-linux'" 
               ''}
               echo ""
               echo "📝 Edit configurations in:"

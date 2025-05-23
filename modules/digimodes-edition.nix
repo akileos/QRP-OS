@@ -3,15 +3,15 @@
 with lib;
 
 {
-  imports = [ ./ham-radio-base.nix ];
+  imports = [ ./qrp-radio-base.nix ];
 
   config = {
-    hamRadio.enable = true;
+    qrpRadio.enable = true;
 
     environment.systemPackages = with pkgs; [
       fldigi
       flrig
-      wsjt-x
+      wsjtx
       js8call
       gqrx
       # Digital mode specific tools

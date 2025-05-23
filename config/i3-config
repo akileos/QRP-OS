@@ -50,9 +50,9 @@ bindsym XF86AudioLowerVolume exec --no-startup-id pactl set-sink-volume @DEFAULT
 bindsym XF86AudioMute exec --no-startup-id pactl set-sink-mute @DEFAULT_SINK@ toggle
 
 # Quick launch HAM apps (examples)
-bindsym $mod+Shift+f exec fldigi
-bindsym $mod+Shift+w exec wsjt-x
-bindsym $mod+Shift+g exec gqrx
+# bindsym $mod+Shift+f exec fldigi
+# bindsym $mod+Shift+w exec wsjt-x
+# bindsym $mod+Shift+g exec gqrx
 
 # Workspaces
 bindsym $mod+1 workspace 1

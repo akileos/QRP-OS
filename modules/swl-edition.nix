@@ -3,10 +3,10 @@
 with lib;
 
 {
-  imports = [ ./ham-radio-base.nix ];
+  imports = [ ./qrp-radio-base.nix ];
 
   config = {
-    hamRadio = {
+    qrpRadio = {
       enable = true;
       enableTX = false;  # SWL = receive only
     };

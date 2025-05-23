@@ -12,20 +12,79 @@ jobs:
     strategy:
       matrix:
         edition: [swl, digimodes, cw, full]
-        arch: [x86, rpi3, rpi4, rpi5]  
+        arch: [x86, rpi3, rpi4, rpi5, rpi400, rpizero2w]  
     
     steps:
     - uses: actions/checkout@v3
+
+    - name: Maximize build space
+      uses: easimon/maximize-build-space@master
+      with:
+        root-reserve-mb: 512
+        swap-size-mb: 1024
+        remove-dotnet: 'true'
+        remove-android: 'true'
+        remove-haskell: 'true'
+        remove-codeql: 'true'
+        remove-docker-images: 'true' # Add this if Docker images might be consuming space
+
+    - name: Install QEMU for cross-compilation
+      run: |
+        sudo apt-get update -y
+        sudo apt-get install -y qemu-user-static binfmt-support
     
     - uses: DeterminateSystems/nix-installer-action@main
-    - uses: DeterminateSystems/magic-nix-cache-action@main
-    
-    - name: Build ${{ matrix.edition }}-${{ matrix.arch }} ISO
-      run: |
-        nix build .#${{ matrix.edition }}-${{ matrix.arch }}-iso
-        
-    - name: Upload ISO
-      uses: actions/upload-artifact@v3
       with:
-        name: ham-radio-${{ matrix.edition }}-${{ matrix.arch }}.iso
-        path: result/iso/*.iso
+        extra-conf: |
+          extra-platforms = aarch64-linux x86_64-linux
+      # The DeterminateSystems/nix-installer-action should automatically pick up
+      # common cross-compilation setups like QEMU. Explicitly setting
+      # extra-platforms in nix.conf might be needed if issues persist.
+      # For now, we rely on its defaults after installing QEMU.
+
+    # - name: Configure Nix for cross-compilation
+    #   run: |
+    #     sudo mkdir -p /etc/nix
+    #     echo "extra-platforms = aarch64-linux x86_64-linux" | sudo tee -a /etc/nix/nix.conf
+    #     # Restart nix-daemon if it's running to pick up the new config, or ensure it starts with it.
+    #     # This might vary depending on how nix-installer-action sets up the daemon.
+    #     # A common way to restart if systemd is used:
+    #     # if systemctl is-active --quiet nix-daemon; then sudo systemctl restart nix-daemon; fi
+    #     # For now, let's assume the daemon will pick it up on next use or is started after this by the installer.
+
+    - name: Determine image properties and target system
+      id: image_props
+      run: |
+        TARGET_SYSTEM=""
+        if [ "${{ matrix.arch }}" == "x86" ]; then
+          echo "format=iso" >> $GITHUB_OUTPUT
+          echo "extension=iso" >> $GITHUB_OUTPUT
+          echo "path_glob=result/iso/*.iso" >> $GITHUB_OUTPUT
+          TARGET_SYSTEM="x86_64-linux"
+        elif [[ "${{ matrix.arch }}" == "rpi3" || \
+                  "${{ matrix.arch }}" == "rpi4" || \
+                  "${{ matrix.arch }}" == "rpi5" || \
+                  "${{ matrix.arch }}" == "rpi400" || \
+                  "${{ matrix.arch }}" == "rpizero2w" ]]; then
+          echo "format=sd-aarch64" >> $GITHUB_OUTPUT
+          echo "extension=img" >> $GITHUB_OUTPUT
+          echo "path_glob=result/sd-image/*.img" >> $GITHUB_OUTPUT
+          TARGET_SYSTEM="aarch64-linux"
+        else
+          # This case should not be hit with the current matrix
+          echo "format=raw" >> $GITHUB_OUTPUT 
+          echo "extension=img" >> $GITHUB_OUTPUT
+          echo "path_glob=result/disk.img" >> $GITHUB_OUTPUT
+          TARGET_SYSTEM="x86_64-linux" # Fallback
+        fi
+        echo "target_system=$TARGET_SYSTEM" >> $GITHUB_OUTPUT
+        
+    - name: Build ${{ matrix.edition }}-${{ matrix.arch }} (${{ steps.image_props.outputs.format }}) for ${{ steps.image_props.outputs.target_system }}
+      run: |
+        nix build ${{ github.workspace }}#packages.${{ steps.image_props.outputs.target_system }}.${{ matrix.edition }}-${{ matrix.arch }}-${{ steps.image_props.outputs.format }}
+        
+    - name: Upload Image
+      uses: actions/upload-artifact@v4
+      with:
+        name: qrp-os-${{ matrix.edition }}-${{ matrix.arch }}.${{ steps.image_props.outputs.extension }}
+        path: ${{ steps.image_props.outputs.path_glob }}
