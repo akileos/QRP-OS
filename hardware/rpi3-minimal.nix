@@ -19,7 +19,7 @@
   
   # Disable some features to save resources
   services.pipewire.enable = lib.mkForce false;
-  services.pulseaudio.enable = lib.mkForce true;
+  hardware.pulseaudio.enable = lib.mkForce true;
   
   # Basic filesystem configuration for nixosConfigurations
   fileSystems."/" = lib.mkDefault {

@@ -40,7 +40,7 @@
   };
   
   # Explicitly disable PulseAudio when PipeWire is enabled
-  services.pulseaudio.enable = false;
+  hardware.pulseaudio.enable = false;
 
   # USB device permissions and rules
   services.udev.extraRules = ''

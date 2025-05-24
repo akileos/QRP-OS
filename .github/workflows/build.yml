@@ -81,15 +81,26 @@ jobs:
         # Show what we're building for transparency
         echo "Building package: .#packages.${{ steps.image_props.outputs.target_system }}.${{ matrix.edition }}-${{ matrix.arch }}-${{ steps.image_props.outputs.format }}"
         
+        # Validate package exists before building
+        echo "Checking if package exists..."
+        nix eval .#packages.${{ steps.image_props.outputs.target_system }}.${{ matrix.edition }}-${{ matrix.arch }}-${{ steps.image_props.outputs.format }} --json > /dev/null
+        
         # Use --no-link to avoid creating result symlinks that might cause issues
         # Use --print-out-paths to see what was built
+        echo "Starting build with verbose output..."
         nix build \
           --no-link \
           --print-out-paths \
           --verbose \
-          .#packages.${{ steps.image_props.outputs.target_system }}.${{ matrix.edition }}-${{ matrix.arch }}-${{ steps.image_props.outputs.format }}
+          --option sandbox false \
+          .#packages.${{ steps.image_props.outputs.target_system }}.${{ matrix.edition }}-${{ matrix.arch }}-${{ steps.image_props.outputs.format }} || {
+            echo "Build failed, checking logs..."
+            nix log .#packages.${{ steps.image_props.outputs.target_system }}.${{ matrix.edition }}-${{ matrix.arch }}-${{ steps.image_props.outputs.format }} || echo "No logs available"
+            exit 1
+          }
         
         # Create result symlink for upload step
+        echo "Creating result symlink..."
         nix build .#packages.${{ steps.image_props.outputs.target_system }}.${{ matrix.edition }}-${{ matrix.arch }}-${{ steps.image_props.outputs.format }}
         
     - name: Upload Image

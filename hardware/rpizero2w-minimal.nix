@@ -3,11 +3,11 @@
 {
   imports = [ ./rpi-common.nix ];
   
-  # Pi Zero 2W uses Pi3 kernel (same BCM2710A1 SoC)
-  boot.kernelPackages = lib.mkForce pkgs.linuxPackages_rpi3;
+  # Use default Pi4 kernel for better compatibility - Pi Zero 2W is Pi4 compatible
+  boot.kernelPackages = lib.mkDefault pkgs.linuxPackages_rpi4;
   
-  # Pi Zero 2W hardware support (uses Pi3 device tree)
-  hardware.deviceTree.filter = lib.mkForce "*rpi-3-*.dtb";
+  # Use generic Pi device tree to avoid specificity issues
+  hardware.deviceTree.filter = lib.mkDefault "*rpi-*.dtb";
   
   # Aggressive memory optimization for 512MB RAM
   boot.kernelParams = [ 
@@ -25,10 +25,10 @@
   
   # Disable PipeWire - too memory hungry for Pi Zero 2W
   services.pipewire.enable = lib.mkForce false;
-  services.pulseaudio.enable = lib.mkForce true;
+  hardware.pulseaudio.enable = lib.mkForce true;
   
   # Optimize PulseAudio for low memory
-  services.pulseaudio.extraConfig = ''
+  hardware.pulseaudio.extraConfig = ''
     # Reduce buffer sizes to save memory
     default-sample-rate = 22050
     default-sample-channels = 1
