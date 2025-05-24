@@ -9,6 +9,14 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    env:
+      # Enable better Nix build parallelism
+      NIX_CONFIG: |
+        max-jobs = auto
+        cores = 0
+        # Use GitHub Actions cache more aggressively  
+        build-users-group = nixbld
+        auto-optimise-store = true
     strategy:
       matrix:
         #edition: [swl, digimodes, cw, full]
@@ -16,29 +24,30 @@ jobs:
         edition: [digimodes]
         arch: [rpizero2w]  
     steps:
-    - name: Install QEMU for cross-compilation
-      run: |
-        sudo apt-get update -y
-        sudo apt-get install -y qemu-user-static binfmt-support
-    - uses: actions/checkout@v3
-    - uses: DeterminateSystems/nix-installer-action@main
+    - uses: actions/checkout@v4
+    - uses: cachix/install-nix-action@v31
       with:
-        extra-conf: |
+        extra_nix_config: |
           extra-platforms = aarch64-linux x86_64-linux
-      # The DeterminateSystems/nix-installer-action should automatically pick up
-      # common cross-compilation setups like QEMU. Explicitly setting
-      # extra-platforms in nix.conf might be needed if issues persist.
-      # For now, we rely on its defaults after installing QEMU.
-
-    # - name: Configure Nix for cross-compilation
-    #   run: |
-    #     sudo mkdir -p /etc/nix
-    #     echo "extra-platforms = aarch64-linux x86_64-linux" | sudo tee -a /etc/nix/nix.conf
-    #     # Restart nix-daemon if it's running to pick up the new config, or ensure it starts with it.
-    #     # This might vary depending on how nix-installer-action sets up the daemon.
-    #     # A common way to restart if systemd is used:
-    #     # if systemctl is-active --quiet nix-daemon; then sudo systemctl restart nix-daemon; fi
-    #     # For now, let's assume the daemon will pick it up on next use or is started after this by the installer.
+          max-jobs = auto
+          always-allow-substitutes = true
+          # Optimize for CI performance
+          builders-use-substitutes = true
+          substituters = https://cache.nixos.org/ https://nix-community.cachix.org
+          trusted-public-keys = cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY= nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs=
+        github_access_token: ${{ secrets.GITHUB_TOKEN }}
+    
+    # Use GitHub Actions cache for Nix store (free alternative to paid caches)
+    - name: Cache Nix store
+      uses: actions/cache@v4
+      with:
+        path: |
+          ~/.cache/nix
+          /nix/store
+        key: nix-${{ runner.os }}-${{ matrix.arch }}-${{ hashFiles('flake.lock') }}
+        restore-keys: |
+          nix-${{ runner.os }}-${{ matrix.arch }}-
+          nix-${{ runner.os }}-
 
     - name: Determine image properties and target system
       id: image_props
@@ -69,6 +78,18 @@ jobs:
         
     - name: Build ${{ matrix.edition }}-${{ matrix.arch }} (${{ steps.image_props.outputs.format }}) for ${{ steps.image_props.outputs.target_system }}
       run: |
+        # Show what we're building for transparency
+        echo "Building package: .#packages.${{ steps.image_props.outputs.target_system }}.${{ matrix.edition }}-${{ matrix.arch }}-${{ steps.image_props.outputs.format }}"
+        
+        # Use --no-link to avoid creating result symlinks that might cause issues
+        # Use --print-out-paths to see what was built
+        nix build \
+          --no-link \
+          --print-out-paths \
+          --verbose \
+          .#packages.${{ steps.image_props.outputs.target_system }}.${{ matrix.edition }}-${{ matrix.arch }}-${{ steps.image_props.outputs.format }}
+        
+        # Create result symlink for upload step
         nix build .#packages.${{ steps.image_props.outputs.target_system }}.${{ matrix.edition }}-${{ matrix.arch }}-${{ steps.image_props.outputs.format }}
         
     - name: Upload Image

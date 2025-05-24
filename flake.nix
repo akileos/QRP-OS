@@ -53,6 +53,14 @@
             ./modules/${edition}-edition.nix
             ./hardware/${arch}-minimal.nix
             ./images/base-image.nix
+            # Build optimization
+            {
+              nix.settings = {
+                max-jobs = "auto";
+                cores = 0; # Use all available cores
+                auto-optimise-store = true;
+              };
+            }
           ];
         };
       }) combinations);
@@ -69,12 +77,19 @@
               {
               name = "${edition}-${arch}-${nixosGenFormat}"; # e.g., swl-x86-iso or digimodes-rpi4-sd-rpi4
               value = nixos-generators.nixosGenerate {
-                inherit system;
-                modules = [
-                  ./modules/${edition}-edition.nix
-                  ./hardware/${arch}-minimal.nix
-                  ./images/base-image.nix
-                ] ++ nixpkgs.lib.optional (arch == "x86") {
+                inherit system;              modules = [
+                ./modules/${edition}-edition.nix
+                ./hardware/${arch}-minimal.nix
+                ./images/base-image.nix
+                # Build optimization
+                {
+                  nix.settings = {
+                    max-jobs = "auto";
+                    cores = 0; # Use all available cores
+                    auto-optimise-store = true;
+                  };
+                }
+              ] ++ nixpkgs.lib.optional (arch == "x86") {
                   isoImage.isoName = "qrp-os-${edition}-${arch}.iso";
                 } ++ nixpkgs.lib.optional (builtins.elem arch [ "rpi3" "rpi4" "rpi400" "rpizero2w" "rpi5" ]) {
                   sdImage.imageName = "qrp-os-${edition}-${arch}.img";
@@ -87,15 +102,22 @@
           )) // {
             # Default package for Linux (swl-x86-iso)
             default = nixos-generators.nixosGenerate {
-              inherit system;
-              modules = [
-                ./modules/swl-edition.nix
-                ./hardware/x86-minimal.nix
-                ./images/base-image.nix
-                {
-                  isoImage.isoName = "qrp-os-swl-x86.iso";
-                }
-              ];
+              inherit system;            modules = [
+              ./modules/swl-edition.nix
+              ./hardware/x86-minimal.nix
+              ./images/base-image.nix
+              # Build optimization
+              {
+                nix.settings = {
+                  max-jobs = "auto";
+                  cores = 0; # Use all available cores
+                  auto-optimise-store = true;
+                };
+              }
+              {
+                isoImage.isoName = "qrp-os-swl-x86.iso";
+              }
+            ];
               format = "iso"; # nixos-generators format for x86
             };
           }
