@@ -102,7 +102,7 @@ jobs:
         
         # Create result symlink for upload step
         echo "Creating result symlink..."
-        nix build .#packages.${{ steps.image_props.outputs.target_system }}.${{ matrix.edition }}-${{ matrix.arch }}-${{ steps.image_props.outputs.format }}
+        nix build --accept-flake-config .#packages.${{ steps.image_props.outputs.target_system }}.${{ matrix.edition }}-${{ matrix.arch }}-${{ steps.image_props.outputs.format }}
         
     - name: Upload Image
       uses: actions/upload-artifact@v4
