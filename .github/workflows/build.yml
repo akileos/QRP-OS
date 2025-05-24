@@ -93,6 +93,7 @@ jobs:
           --print-out-paths \
           --verbose \
           --option sandbox false \
+          --accept-flake-config \
           .#packages.${{ steps.image_props.outputs.target_system }}.${{ matrix.edition }}-${{ matrix.arch }}-${{ steps.image_props.outputs.format }} || {
             echo "Build failed, checking logs..."
             nix log .#packages.${{ steps.image_props.outputs.target_system }}.${{ matrix.edition }}-${{ matrix.arch }}-${{ steps.image_props.outputs.format }} || echo "No logs available"
