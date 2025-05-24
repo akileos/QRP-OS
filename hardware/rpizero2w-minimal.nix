@@ -4,7 +4,7 @@
   imports = [ ./rpi-common.nix ];
   
   # Use default Pi4 kernel for better compatibility - Pi Zero 2W is Pi4 compatible
-  boot.kernelPackages = lib.mkDefault pkgs.linuxPackages_rpi4;
+  boot.kernelPackages = lib.mkForce pkgs.linuxPackages_rpi4;
   
   # Use generic Pi device tree to avoid specificity issues
   hardware.deviceTree.filter = lib.mkDefault "*rpi-*.dtb";
