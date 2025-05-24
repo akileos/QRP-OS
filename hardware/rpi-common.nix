@@ -23,9 +23,10 @@
   '';
 
   # Raspberry Pi appropriate initrd modules (no SATA/AHCI)
-  boot.initrd.availableKernelModules = [ 
+  # Use mkForce to completely override NixOS defaults that include x86 modules
+  boot.initrd.availableKernelModules = lib.mkForce [ 
     "mmc_block" "usb_storage" "uas" "sd_mod" "sr_mod" 
-    "xhci_pci" "ehci_pci" "sdhci_iproc" 
+    "xhci_pci" "ehci_pci" "bcm2835"  # Use bcm2835 instead of sdhci_iproc
   ];
   
   # Force disable problematic modules that don't exist on ARM/Pi hardware
