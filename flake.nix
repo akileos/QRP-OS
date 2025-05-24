@@ -13,7 +13,7 @@
     let
       # Only Linux systems can build NixOS
       linuxSystems = [ "x86_64-linux" "aarch64-linux" ];
-      allSystems = [ "x86_64-linux" "aarch64-linux" "x86_64-darwin" "aarch64-darwin" ];
+      allSystems = [ "x86_64-linux" "aarch64-linux" ];
       
       editions = [ "swl" "digimodes" "cw" "full" ];
       architectures = [ "x86" "rpi3" "rpi4" "rpi400" "rpizero2w" "rpi5" ];

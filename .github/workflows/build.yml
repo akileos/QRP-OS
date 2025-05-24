@@ -11,9 +11,10 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        edition: [swl, digimodes, cw, full]
-        arch: [x86, rpi3, rpi4, rpi5, rpi400, rpizero2w]  
-    
+        #edition: [swl, digimodes, cw, full]
+        #arch: [x86, rpi3, rpi4, rpi5, rpi400, rpizero2w]  
+        edition: [digimodes]
+        arch: [rpizero2w]  
     steps:
     - uses: actions/checkout@v3
 
@@ -26,8 +27,7 @@ jobs:
         remove-android: 'true'
         remove-haskell: 'true'
         remove-codeql: 'true'
-        remove-docker-images: 'true' # Add this if Docker images might be consuming space
-
+        remove-docker-images: 'true' 
     - name: Install QEMU for cross-compilation
       run: |
         sudo apt-get update -y
@@ -81,7 +81,7 @@ jobs:
         
     - name: Build ${{ matrix.edition }}-${{ matrix.arch }} (${{ steps.image_props.outputs.format }}) for ${{ steps.image_props.outputs.target_system }}
       run: |
-        nix build ${{ github.workspace }}#packages.${{ steps.image_props.outputs.target_system }}.${{ matrix.edition }}-${{ matrix.arch }}-${{ steps.image_props.outputs.format }}
+        nix build .#packages.${{ steps.image_props.outputs.target_system }}.${{ matrix.edition }}-${{ matrix.arch }}-${{ steps.image_props.outputs.format }}
         
     - name: Upload Image
       uses: actions/upload-artifact@v4
