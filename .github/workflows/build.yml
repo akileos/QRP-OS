@@ -16,23 +16,11 @@ jobs:
         edition: [digimodes]
         arch: [rpizero2w]  
     steps:
-    - uses: actions/checkout@v3
-
-    - name: Maximize build space
-      uses: easimon/maximize-build-space@master
-      with:
-        root-reserve-mb: 512
-        swap-size-mb: 1024
-        remove-dotnet: 'true'
-        remove-android: 'true'
-        remove-haskell: 'true'
-        remove-codeql: 'true'
-        remove-docker-images: 'true' 
     - name: Install QEMU for cross-compilation
       run: |
         sudo apt-get update -y
         sudo apt-get install -y qemu-user-static binfmt-support
-    
+    - uses: actions/checkout@v3
     - uses: DeterminateSystems/nix-installer-action@main
       with:
         extra-conf: |
