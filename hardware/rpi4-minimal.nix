@@ -24,6 +24,7 @@
   fileSystems."/" = lib.mkDefault {
     device = "/dev/disk/by-label/NIXOS_SD";
     fsType = "ext4";
+    autoResize = true;  # Automatically expand to full SD card size
   };
   
   fileSystems."/boot" = lib.mkDefault {

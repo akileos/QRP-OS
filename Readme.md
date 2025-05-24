@@ -84,7 +84,10 @@ QRP Radio OS is a specialized Linux distribution built on NixOS, designed specif
 - **Pi Zero 2W** - Ultralight setup (512MB RAM optimized)
 - **Pi 5** - Latest hardware support
 
-**Default Hostname:** `qrp-pi` (for all Raspberry Pi devices)
+**Features:**
+- **Automatic SD Card Expansion** - Root filesystem automatically expands to use the full SD card on first boot
+- **Default Hostname:** `qrp-pi` (for all Raspberry Pi devices)
+- Optimized audio stack per device (PulseAudio on low-memory devices, PipeWire on Pi4+)
 
 ## Building Images
 

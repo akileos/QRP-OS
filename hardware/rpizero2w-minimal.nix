@@ -59,6 +59,7 @@
     device = "/dev/disk/by-label/NIXOS_SD";
     fsType = "ext4";
     options = [ "noatime" "nodiratime" ]; # Reduce disk writes
+    autoResize = true;  # Automatically expand to full SD card size
   };
   
   fileSystems."/boot" = lib.mkDefault {
