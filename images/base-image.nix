@@ -1,9 +1,6 @@
 { config, lib, pkgs, ... }:
 
 {
-  # Don't import installation-cd-minimal.nix when using nixos-generators
-  # as it conflicts with the generator's own configurations
-
   # Set state version
   system.stateVersion = "24.11";
 
@@ -28,7 +25,6 @@
   hardware.enableRedistributableFirmware = true;
   hardware.firmware = with pkgs; [
     linux-firmware
-    rtl8761b-firmware  # Common Bluetooth/WiFi combo chips
   ];
 
   # Audio system - essential for HAM radio
@@ -76,51 +72,42 @@
     plugdev = {};
   };
 
-  # Minimal desktop environment with WiFi GUI
+  # Minimal X11 desktop environment for HAM radio GUI apps
   services.xserver = {
     enable = true;
-    displayManager.lightdm.enable = true;
-    windowManager.i3.enable = true;
+    
+    # Use automatic display manager instead of lightdm to reduce dependencies
+    displayManager.startx.enable = true;
+    
+    # Minimal window manager
+    windowManager.dwm.enable = true;
+    
+    # Disable desktop manager to keep it minimal
+    desktopManager.xterm.enable = false;
   };
 
-  # NetworkManager with GUI support
+  # NetworkManager with minimal GUI support
   networking.networkmanager.enable = true;
   networking.wireless.enable = false;
-  networking.networkmanager.wifi.backend = "wpa_supplicant";
 
-  # Enable NetworkManager applet in system tray
-  programs.nm-applet.enable = true;
-
-
-  # Default user for live system
+  # Default user for radio system
   users.users.qrp = {
     isNormalUser = true;
     extraGroups = [ 
-      "wheel" "audio" "dialout" "plugdev" "gpio" 
-      "networkmanager" "video"  # video for some SDR apps
+      "wheel" "audio" "dialout" "plugdev" 
+      "networkmanager" "video"
     ];
     password = "qrp";
   };
 
   # Enable SSH for remote access
   services.openssh.enable = true;
-  
-  # Copy i3 config for better UX
-  environment.etc."skel/.config/i3/config".text = builtins.readFile ../config/i3-config;
-  
-  # Ensure config directory exists and copy i3 config to user
-  system.activationScripts.i3config = ''
-    mkdir -p /home/qrp/.config/i3
-    cp /etc/skel/.config/i3/config /home/qrp/.config/i3/config
-    chown -R qrp:users /home/qrp/.config || true
-  '';
 
-  # Essential packages for hardware troubleshooting
+  # Essential packages for HAM radio GUI applications
   environment.systemPackages = with pkgs; [
     # Audio tools
     alsa-utils
     pavucontrol
-    pulseaudio  # For pactl, pacmd commands
     
     # USB/Serial tools
     minicom
@@ -130,9 +117,6 @@
     # Network tools
     wirelesstools
     wpa_supplicant
-    wpa_supplicant_gui 
-    networkmanagerapplet
-
     
     # Hardware detection
     usbutils  # lsusb
@@ -143,19 +127,19 @@
     vim
     nano
     git
-    # X11 essentials for GUI apps
+    wget
+    curl
+    
+    # Minimal X11 tools
+    xterm
     xorg.xrandr
-    xorg.xwininfo
-    dmenu  # For i3 app launcher
     
-    # System tray for nm-applet
-    trayer
+    # Simple application launcher
+    dmenu
     
-    # Optional: Lightweight file manager
-    pcmanfm
-    
-    # Terminal emulator
-    alacritty
+    # Essential for radio work
+    socat
+    netcat
   ];
   
   # Increase ulimits for SDR applications
