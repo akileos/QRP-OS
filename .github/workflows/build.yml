@@ -83,7 +83,7 @@ jobs:
         
         # Validate package exists before building
         echo "Checking if package exists..."
-        nix eval .#packages.${{ steps.image_props.outputs.target_system }}.${{ matrix.edition }}-${{ matrix.arch }}-${{ steps.image_props.outputs.format }} --json > /dev/null
+        nix eval .#packages.${{ steps.image_props.outputs.target_system }}.${{ matrix.edition }}-${{ matrix.arch }}-${{ steps.image_props.outputs.format }} --json --accept-flake-config > /dev/null
         
         # Use --no-link to avoid creating result symlinks that might cause issues
         # Use --print-out-paths to see what was built
