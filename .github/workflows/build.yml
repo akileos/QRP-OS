@@ -22,7 +22,7 @@ jobs:
         #edition: [swl, digimodes, cw, full]
         #arch: [x86, rpi3, rpi4, rpi5, rpi400, rpizero2w]  
         edition: [digimodes]
-        arch: [x86]  
+        arch: [x86, rpi3]  
     steps:
     - uses: actions/checkout@v4
     - uses: cachix/install-nix-action@v31
