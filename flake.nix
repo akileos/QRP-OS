@@ -92,7 +92,8 @@
               {
               name = "${edition}-${arch}-${nixosGenFormat}"; # e.g., swl-x86-iso or digimodes-rpi4-sd-rpi4
               value = nixos-generators.nixosGenerate {
-                inherit system;              modules = [
+                inherit system;
+                modules = [
                 ./modules/${edition}-edition.nix
                 ./hardware/${arch}-minimal.nix
                 ./images/base-image.nix
@@ -117,7 +118,8 @@
           )) // {
             # Default package for Linux (swl-x86-iso)
             default = nixos-generators.nixosGenerate {
-              inherit system;            modules = [
+              inherit system;
+              modules = [
               ./modules/swl-edition.nix
               ./hardware/x86-minimal.nix
               ./images/base-image.nix

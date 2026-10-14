@@ -25,8 +25,7 @@
   # Raspberry Pi appropriate initrd modules (no SATA/AHCI)
   # Use mkForce to completely override NixOS defaults that include x86 modules
   boot.initrd.availableKernelModules = lib.mkForce [ 
-    "mmc_block" "usb_storage" "sd_mod" 
-    "bcm2835"  # Pi-specific SD/MMC module
+    "mmc_block" "usb_storage" "sd_mod"
   ];
   
   # Force disable problematic modules that don't exist on ARM/Pi hardware
