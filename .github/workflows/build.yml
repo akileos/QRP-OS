@@ -25,6 +25,12 @@ jobs:
         arch: [x86, rpi3]  
     steps:
     - uses: actions/checkout@v4
+    - name: Set up QEMU for aarch64 builds
+      if: matrix.arch != 'x86'
+      uses: docker/setup-qemu-action@v3
+      with:
+        platforms: arm64
+
     - uses: cachix/install-nix-action@v31
       with:
         extra_nix_config: |
@@ -37,18 +43,6 @@ jobs:
           trusted-public-keys = cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY= nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs=
         github_access_token: ${{ secrets.GITHUB_TOKEN }}
     
-    # Use GitHub Actions cache for Nix store (free alternative to paid caches)
-    - name: Cache Nix store
-      uses: actions/cache@v4
-      with:
-        path: |
-          ~/.cache/nix
-          /nix/store
-        key: nix-${{ runner.os }}-${{ matrix.arch }}-${{ hashFiles('flake.lock') }}
-        restore-keys: |
-          nix-${{ runner.os }}-${{ matrix.arch }}-
-          nix-${{ runner.os }}-
-
     - name: Determine image properties and target system
       id: image_props
       run: |
@@ -65,7 +59,7 @@ jobs:
                   "${{ matrix.arch }}" == "rpizero2w" ]]; then
           echo "format=sd-aarch64" >> $GITHUB_OUTPUT
           echo "extension=img" >> $GITHUB_OUTPUT
-          echo "path_glob=result/sd-image/*.img" >> $GITHUB_OUTPUT
+          echo "path_glob=result/sd-image/*.img*" >> $GITHUB_OUTPUT
           TARGET_SYSTEM="aarch64-linux"
         else
           # This case should not be hit with the current matrix
@@ -109,3 +103,4 @@ jobs:
       with:
         name: qrp-os-${{ matrix.edition }}-${{ matrix.arch }}.${{ steps.image_props.outputs.extension }}
         path: ${{ steps.image_props.outputs.path_glob }}
+        if-no-files-found: error
